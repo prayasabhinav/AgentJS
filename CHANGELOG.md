@@ -1,6 +1,6 @@
 # AgentJS Framework Development Changelog
 
-## Unreleased — NSMnum layer (26 November 2026)
+## 1.1.0 — NSMnum layer (26 November 2026)
 
 ### Added
 

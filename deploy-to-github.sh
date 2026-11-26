@@ -23,7 +23,7 @@ if [ -z "$1" ]; then
 fi
 
 REPO_URL=$1
-COMMIT_MSG=${2:-"Deploy AgentJS Core Framework v1.0.1"}
+COMMIT_MSG=${2:-"Deploy AgentJS Core Framework v1.1.0"}
 
 # Initialize git if not already initialized
 if [ ! -d .git ]; then
