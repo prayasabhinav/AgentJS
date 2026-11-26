@@ -12,6 +12,10 @@
 - [x] **`test-nsmnum.mjs`**, 30 checks (including the keyer's two and the JSON table's eight), run by `npm test` after `npm run build`. The existing tests pass unchanged: `test-comprehensive.mjs` 12/12, `test-network-manager.mjs` 7/7, `test-visualization-exports.mjs` 5/5.
 - [x] README: the section *NSMnum: each agent type run by its own small model* and a line in Key Features, both linking to the [NSMnum syntax](https://syntax.prayasabhinav.net/nsmnum/).
 
+### Publishing
+
+- [x] **`.github/workflows/publish.yml`** publishes to npm with trusted publishing (OIDC), so no npm token is kept anywhere: on a pushed `v*` tag, or by hand from the Actions tab. It needs a trusted publisher set once on npmjs.com (`prayasabhinav` / `AgentJS` / `publish.yml`).
+
 ### Fixed
 
 - [x] **`MLAgent` MOVE now moves the agent.** `executeMovement` worked out the new position and wrote it only to the `x` and `y` properties, so `position` never changed. It now calls `setPosition`, and still sets `x` and `y`.

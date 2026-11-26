@@ -1,0 +1,28 @@
+name: Publish to npm
+
+# Publishes agentjs-core with npm trusted publishing (OIDC): npm trusts this workflow, so no npm token is stored anywhere.
+# Runs when a version tag (v*) is pushed, or by hand from the Actions tab, and publishes the version package.json names.
+# npm publish first runs prepublishOnly: clean, build and every test.
+# Needs, once, on npmjs.com: agentjs-core → Settings → Trusted Publisher → GitHub Actions → prayasabhinav / AgentJS / publish.yml
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm --version
+      - run: npm ci
+      - run: npm publish
