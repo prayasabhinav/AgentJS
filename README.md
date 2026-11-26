@@ -16,6 +16,7 @@ AgentJS Core is a comprehensive framework for building agent-based models (ABMs)
 - 🌍 **Multiple Environment Types** - Grid-based and continuous space environments
 - 🎨 **Built-in Visualization** - p5.js-powered rendering with camera controls and effects
 - 🧠 **ML Integration** - TensorFlow.js support for intelligent agent behaviors
+- 🔢 **NSMnum** - each agent type run by its own small model, which answers only with the number of an action from a list or none, trained on your own keys ([NSMnum syntax](https://syntax.prayasabhinav.net/nsmnum/))
 - 📊 **Data Analysis** - Comprehensive metrics collection and export capabilities
 - ⚙️ **JSON Configuration** - Define complete simulations via JSON configuration files
 - 🎮 **Game-Ready** - Designed for educational games and interactive simulations
@@ -261,6 +262,100 @@ await registry.loadModel('smart-agent', '/models/smart-agent.json');
 
 const agent = new SmartAgent('agent-1', registry.getModel('smart-agent'));
 ```
+
+### NSMnum: each agent type run by its own small model
+
+An NSMnum, Narrow Small Model (numerating), said en-ess-em-num, is a small model that answers only with a number: the place of one action in a fixed list, or none. It writes no text and does not act: your code checks each answer and decides what runs. The method is called ungli ([repository](https://github.com/koherarchitecture/ungli)); the parts of an NSMnum are listed on its page on SYNTAX ([NSMnum syntax](https://syntax.prayasabhinav.net/nsmnum/)).
+
+In AgentJS each agent type can have its own NSMnum. A table in your code gives each type a row: its NSMnum, its list of actions, and the action it takes when the answer is none (its "don't know").
+
+```typescript
+import { MLAgent, NSMnumTable, TensorFlowChooser } from 'agentjs-core';
+import type { AgentAction, MLAgentState } from 'agentjs-core';
+
+class Reader extends MLAgent {}
+class Walker extends MLAgent {}
+
+const actions: AgentAction[] = [
+  { type: 'MOVE', parameters: { dx: 1, dy: 0 } },    // place 0: right
+  { type: 'MOVE', parameters: { dx: -1, dy: 0 } },   // place 1: left
+];
+const wait: AgentAction = { type: 'CHANGE_PROPERTY', parameters: { property: 'waiting', value: 1 } };
+const encode = (state: MLAgentState) => [state.properties.energy ?? 0];   // turns a state into the numbers the model reads
+
+// an untrained chooser answers almost at random; train it on your keys (below)
+const readerChooser = new TensorFlowChooser(TensorFlowChooser.create(1, actions.length), encode, 0.6);
+const walkerChooser = new TensorFlowChooser(TensorFlowChooser.create(1, actions.length), encode, 0.6);
+
+const table = new NSMnumTable([
+  { agentType: Reader, model: readerChooser, actions, none: wait },
+  { agentType: Walker, model: walkerChooser, actions, none: wait,
+    allowed: (state, place) => state.position.x > 0 || place === 0 },   // at x ≤ 0, only place 0 (right) is allowed
+]);
+const readers = [new Reader(), new Reader()], walkers = [new Walker()];
+const uncovered = await table.assign([...readers, ...walkers]);   // agents no row covers come back to you
+```
+
+In code, places count from 0: `actions[0]` is place 0. An answer counts as none when it is not a whole number from 0 to `actions.length - 1`, when `allowed` returns false, or when the model throws; on none, the agent runs the row's `none` action. Rows match with `instanceof`, and the first row an agent matches is its row, so put subclasses before the classes they extend.
+
+`TensorFlowChooser.create(inputs, actions.length)` makes a small TensorFlow.js model with one output per action and a last one for none; `new TensorFlowChooser(model, encode, threshold)` wraps it as an NSMnum. An answer whose highest output (a softmax probability) is below the threshold counts as none; with a threshold of 0, the default, no answer is refused this way. Choose the threshold by checking the chooser's answers on keyed situations you left out of training.
+
+**The table in JSON.** Rows can be written in the same JSON file as the rest of a simulation, under `nsmnum`, and then match agents by their `kind` property instead of by class:
+
+```json
+{
+  "nsmnum": [
+    {
+      "kind": "literal",
+      "model": "models/literal/model.json",
+      "reads": ["distance", "concreteness"],
+      "actions": [
+        { "type": "MOVE", "parameters": { "dx": 1, "dy": 0 } },
+        { "type": "MOVE", "parameters": { "dx": -1, "dy": 0 } }
+      ],
+      "none": { "type": "CHANGE_PROPERTY", "parameters": { "property": "waiting", "value": 1 } },
+      "threshold": 0.6
+    }
+  ]
+}
+```
+
+```typescript
+import fs from 'node:fs';
+import { tableFromJSON } from 'agentjs-core';
+
+const config = JSON.parse(fs.readFileSync('simulation.json', 'utf8'));
+const table = await tableFromJSON(config.nsmnum);   // a browser fetches each model file
+await table.assign(agents);                         // agents with properties like { kind: 'literal', distance: 0.2, concreteness: 0.8 }
+```
+
+`reads` names the numeric properties the model reads, in order; an agent missing one of them gets none. Every row is checked before anything loads, and each model must read as many numbers as `reads` names and give one output per action plus one for none; otherwise the table is not built and the error names the row. A row that needs an `allowed` check must be written in code, not JSON.
+
+A model file is a trained chooser saved with TensorFlow.js: `await chooser.model.save('downloads://literal')` in a browser, or, in Node with `@tensorflow/tfjs-node` installed, `await chooser.model.save('file://models/literal')` and the loader `(path) => tf.loadLayersModel('file://' + path)` as `tableFromJSON`'s second argument. To key and train for a JSON row, write the `encode` it uses: its `reads`, in order, `(state) => row.reads.map((name) => state.properties[name])`.
+
+**Train an NSMnum on your keys and nothing else.** A key is your answer for one situation: the number of the action you would have the agent take, or 0 for none. You give keys on a blind sheet, which shows each situation with no model's answer on it. The package ships no keys: you key your own, and the keys stay in a file on your machine.
+
+These steps use `keyingItems`, `readKeys` and `keyedRows` from `agentjs-core`, and Node's `fs`. Each agent type has its own NSMnum, so keep its situations, its sheet, its keys file and its training apart from every other type's.
+
+1. During a run, after each step, keep situations for the type: ``{ id: `${agent.id}-${step}`, state: agent.getCurrentState() }``. Each id must be unique: the keyer skips an id it has seen, and `readKeys` keeps only the latest key for it.
+2. Write the sheet: `fs.writeFileSync('sheet.json', JSON.stringify(keyingItems(situations, ['right', 'left'])))`. Each item shows the agent's position, each of its numeric properties (except the four MLAgent keeps about its own model: `mlEnabled`, `predictionConfidence`, `fallbackMode`, `errorRate`) and its number of neighbours, then the actions numbered from 1, with 0 for none.
+3. Key it in a terminal:
+
+```bash
+npx agentjs-key sheet.json my.keys.jsonl
+```
+
+   Type the number of the action you would choose, 0 for none, s to skip, q to stop. Run it again later and it shows only the situations not yet keyed, skipped ones included. If your project is in git, add `*.keys.jsonl` to its `.gitignore`.
+4. Read the keys back and train:
+
+```typescript
+const { keys, unread } = readKeys(fs.readFileSync('my.keys.jsonl', 'utf8'), actions.length);
+await readerChooser.train(keyedRows(situations, keys, encode), actions.length);
+```
+
+On the sheet, actions are numbered from 1 and 0 means none; `readKeys` turns them into places counted from 0. A key outside the list is not used, and its item's id comes back in `unread`. `keyedRows` needs the same situations you wrote the sheet from; if you key in a later session, save each `id` with `encode(state)` beside the sheet and pass `{ id, features, place }` rows to `train` yourself. Train an NSMnum only on keys, never on its own answers or on a run's outcomes.
+
+`test-nsmnum.mjs` checks this behaviour against the built package; after `npm run build`, `npm test` runs it.
 
 ### JSON Configuration System
 

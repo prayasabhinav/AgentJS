@@ -126,3 +126,13 @@ __pycache__/
 !jest.config.js
 !package.json
 !package-lock.json
+# The tests `npm test` runs are part of the package (26 November 2026)
+!test-comprehensive.mjs
+!test-network-manager.mjs
+!test-visualization-exports.mjs
+!test-nsmnum.mjs
+
+# Keys are each user's own and never part of the package (26 November 2026)
+*.keys.jsonl
+keys.jsonl
+keys/

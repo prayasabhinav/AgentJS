@@ -15,6 +15,7 @@
   },
   "files": [
     "dist",
+    "bin",
     "README.md",
     "CHANGELOG.md"
   ],
@@ -25,7 +26,7 @@
     "build:types": "tsc --project tsconfig.build.json",
     "build:framework": "vite build",
     "preview": "vite preview",
-    "test": "node test-comprehensive.mjs && node test-network-manager.mjs && node test-visualization-exports.mjs",
+    "test": "node test-comprehensive.mjs && node test-network-manager.mjs && node test-visualization-exports.mjs && node test-nsmnum.mjs",
     "test:watch": "npm run test",
     "test:coverage": "npm run test",
     "lint": "eslint . --ext .ts,.tsx --fix",
@@ -73,7 +74,6 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@esbuild/linux-x64": "^0.25.8",
     "@types/jest": "^29.5.8",
     "@types/node": "^20.9.0",
     "@types/uuid": "^9.0.7",
@@ -93,5 +93,8 @@
     "typescript": "^5.2.2",
     "vite": "^4.5.0",
     "vite-plugin-dts": "^3.6.3"
+  },
+  "bin": {
+    "agentjs-key": "bin/agentjs-key.mjs"
   }
 }

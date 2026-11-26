@@ -11,6 +11,8 @@ export class MLAgent extends Agent {
   private predictionHistory: AgentAction[] = [];
   private maxHistoryLength: number = 50;
   private fallbackEnabled: boolean = true;
+  /** The action run when there is no model answer to act on; a random step when none is set. */
+  private fallbackAction: AgentAction | undefined;
   private performanceMetrics = {
     predictionCount: 0,
     avgPredictionTime: 0,
@@ -48,6 +50,13 @@ export class MLAgent extends Agent {
       this.setProperty('fallbackMode', 1);
       throw error;
     }
+  }
+
+  /**
+   * Set the action run when there is no model answer to act on (NSMnumTable sets each row's "don't know" action)
+   */
+  setFallbackAction(action: AgentAction | undefined): void {
+    this.fallbackAction = action;
   }
 
   /**
@@ -131,13 +140,10 @@ export class MLAgent extends Agent {
    * Execute step without ML (fallback behavior)
    */
   private stepWithoutML(): void {
-    // Simple random movement as fallback
-    const dx = (Math.random() - 0.5) * 10;
-    const dy = (Math.random() - 0.5) * 10;
-    
-    const fallbackAction: AgentAction = {
+    // The set fallback (an NSMnum row's "don't know" action), else a random step
+    const fallbackAction: AgentAction = this.fallbackAction ?? {
       type: 'MOVE',
-      parameters: { dx, dy },
+      parameters: { dx: (Math.random() - 0.5) * 10, dy: (Math.random() - 0.5) * 10 },
       confidence: 0.1
     };
     
@@ -148,9 +154,9 @@ export class MLAgent extends Agent {
   }
 
   /**
-   * Get current state for ML prediction
+   * The agent's current state, as its model reads it: public so a run's situations can be kept for keying
    */
-  private getCurrentState(): MLAgentState {
+  getCurrentState(): MLAgentState {
     const environmentContext: EnvironmentContext = {
       bounds: { width: 1000, height: 1000 }, // Default bounds
       currentStep: (this.getProperty('step') as number) || 0,
@@ -221,7 +227,9 @@ export class MLAgent extends Agent {
       y: Math.max(0, Math.min(maxY, newY))
     } as Position;
     
-    // Update position through property system
+    // Move the agent (until 26 November 2026 only the x and y properties changed, so its position stayed where it started),
+    // and keep the x and y properties for anything that reads them
+    this.setPosition(newPosition);
     this.setProperty('x', newPosition.x);
     this.setProperty('y', newPosition.y);
   }

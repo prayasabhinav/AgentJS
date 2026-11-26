@@ -1,5 +1,23 @@
 # AgentJS Framework Development Changelog
 
+## Unreleased — NSMnum layer (26 November 2026)
+
+### Added
+
+- [x] **`src/ml/NSMnum.ts`**: each agent type can be run by its own NSMnum, Narrow Small Model (numerating), said en-ess-em-num, which answers only with the place of an action in a fixed list, or none. `NSMnumTable` gives each agent type a row (its NSMnum, its actions, the action it takes on none, an optional `allowed` check written in code). `NSMnumBehavior` turns a row into an `MLBehaviorModel`; any answer that is not a valid, allowed place counts as none. `TensorFlowChooser` is an NSMnum on a small TensorFlow.js model, with a threshold you set.
+- [x] **`tableFromJSON`**: the table written in JSON, under `nsmnum`, beside the rest of a simulation's file. Each row names the agents' `kind`, the model file, the properties it reads, the actions, the action on none and an optional threshold. Rows are checked before anything loads, each model is checked against its row (inputs and outputs), and an agent missing a property its row reads gets none. Rows written in code may still match by class.
+- [x] **Keying**: `keyingItems` makes a blind sheet (each situation with no model's answer on it, and without the four properties MLAgent keeps about its own model), `readKeys` reads a person's keys back, and `keyedRows` turns keyed situations into the only rows a chooser trains on.
+- [x] **`agentjs-key`** (`bin/agentjs-key.mjs`, `npx agentjs-key sheet.json my.keys.jsonl`): a terminal keyer, so anyone who downloads the package keys situations for their own models. It shows each situation, takes a number within the list, 0 for none, s or q, adds each key as one JSON line, and on the next run shows only the situations not yet keyed. The package ships no keys; `*.keys.jsonl`, `keys.jsonl` and `keys/` are ignored by git.
+- [x] **`MLAgent.setFallbackAction`**: the action run when there is no model answer to act on; `NSMnumTable` sets each row's action on none. Without a fallback action, the agent takes a random move, as before. **`MLAgent.getCurrentState`** is now public, so a run's situations can be kept for keying.
+- [x] **`test-nsmnum.mjs`**, 30 checks (including the keyer's two and the JSON table's eight), run by `npm test` after `npm run build`. The existing tests pass unchanged: `test-comprehensive.mjs` 12/12, `test-network-manager.mjs` 7/7, `test-visualization-exports.mjs` 5/5.
+- [x] README: the section *NSMnum: each agent type run by its own small model* and a line in Key Features, both linking to the [NSMnum syntax](https://syntax.prayasabhinav.net/nsmnum/).
+
+### Fixed
+
+- [x] **`MLAgent` MOVE now moves the agent.** `executeMovement` worked out the new position and wrote it only to the `x` and `y` properties, so `position` never changed. It now calls `setPosition`, and still sets `x` and `y`.
+- [x] **`.gitignore`** no longer ignores the three existing test files `npm test` runs (nor the new one). They had been ignored since the first commit, so `npm test`, and `prepublishOnly` with it, failed in a fresh clone.
+- [x] **`@esbuild/linux-x64` removed from devDependencies**: it tied the install to one platform, so `npm install` refused on any other (arm64 Macs included); esbuild fetches its own platform build. The lock file is regenerated, which also corrects its package name and version (it had `@agentjs/core` 1.0.0).
+
 ## Week 2 Implementation - Agent Behaviors & Interactions
 
 ### July 6, 2025

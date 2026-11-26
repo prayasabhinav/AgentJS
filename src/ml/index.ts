@@ -5,6 +5,8 @@ export { StateEncoder } from './StateEncoder';
 export { ModelRegistry } from './ModelRegistry';
 export { MLPerformanceManager } from './MLPerformanceManager';
 export { GenericDataCollector } from './GenericDataCollector';
+export { NSMnumBehavior, NSMnumTable, TensorFlowChooser, keyingItems, readKeys, keyedRows, tableFromJSON } from './NSMnum';
+export type { NSMnumModel, NSMnumRow, NSMnumRowJSON, Situation, KeyingItem, KeyedRow } from './NSMnum';
 
 // Example Models
 export { FlockingMLModel } from './models/FlockingMLModel';

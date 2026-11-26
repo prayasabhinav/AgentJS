@@ -51,6 +51,7 @@ export * from './ml/StateEncoder';
 export * from './ml/ModelRegistry';
 export * from './ml/GenericDataCollector';
 export * from './ml/MLPerformanceManager';
+export * from './ml/NSMnum';
 
 // Example ML Models
 export * from './ml/models/FlockingMLModel';
